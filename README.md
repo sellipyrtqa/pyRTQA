@@ -1,4 +1,4 @@
-# pyRTQA 🧪🌀
+# pyRTQA 🌀
 
 **pyRTQA** is a Quality Assurance (QA) tool for Radiation Therapy.  
 It's built using Python and Tkinter, and integrates with [pylinac](https://github.com/jrkerns/pylinac) to analyze CatPhan phantoms.
@@ -130,4 +130,4 @@ BSD Clause3 License — see [LICENSE](LICENSE)
 
 ---
 
-Made with ❤️ by Selli
+Made with ❤️ by Sambasivaselli
