@@ -23,7 +23,7 @@ python pyRTQA_UI.py
 ```
 
 ### If you're using the `.exe`:
-Just double-click the `pyRTQA.exe` file — no installation needed!
+Just follow this link https://drive.google.com/drive/folders/1n-JEvBPtIEMTov594SJsx_6MZdOk3I38?usp=drive_link and double-click the `pyRTQA_UI.exe` file — no installation needed!
 
 ## 📘 QA Instructions
 
