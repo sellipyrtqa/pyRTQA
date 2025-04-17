@@ -1,0 +1,5 @@
+future~=0.18.3
+reportlab~=4.2.2
+matplotlib~=3.9.1
+pandas~=2.2.2
+pylinac~=3.32.0

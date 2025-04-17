@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pyRTQA Instructions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        h2 {
+            color: #004080;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        ul li::before {
+            content: "\2022"; /* Bullet point */
+            color: #004080;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>pyRTQA Instructions</h1>
+
+    <div class="section">
+        <h2>FFF Analysis - AERB</h2>
+        <h3>RFA Data</h3>
+        <ul>
+            <li>Measure beam profiles with the following settings:
+                <ul>
+                    <li>Field Size: 20 cm x 20 cm</li>
+                    <li>Depth: 10 cm</li>
+                    <li>Source-to-Surface Distance (SSD): 90 cm</li>
+                </ul>
+            </li>
+            <li>Normalize your beam profile to 100%, then export the data to an Excel file.</li>
+            <li>Ensure the Excel file includes two sheets:
+                <ul>
+                    <li><strong>Inline Sheet</strong>: Columns labeled "Inline (cm)" and "Dose (%)".</li>
+                    <li><strong>Crossline Sheet</strong>: Columns labeled "Crossline (cm)" and "Dose (%)".</li>
+                </ul>
+            </li>
+            <li>Record energy and depth information in the file.</li>
+        </ul>
+
+        <h3>2D Image Data</h3>
+        <ul>
+            <li>Upload an EPID image (.dcm or .tiff) for a 20 cm x 20 cm field.</li>
+            <li>Place a 10 cm slab phantom at an SSD of 90 cm and expose.</li>
+            <li>Enter energy and depth information accordingly.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Winston-Lutz QA</h2>
+        <ul>
+            <li>Prepare a folder with .dcm files.</li>
+            <li>Valid file naming examples:
+                <ul>
+                    <li>MyWL-gantry0-coll90-couch315.dcm</li>
+                    <li>gantry90_stuff_coll45-couch0.dcm</li>
+                    <li>abc-couch45-gantry315-coll0.dcm</li>
+                </ul>
+            </li>
+            <li>Invalid file naming examples:
+                <ul>
+                    <li>mywl-gantry=0-coll=90-couch=315.dcm</li>
+                    <li>gan45_collimator30-table270.dcm</li>
+                </ul>
+            </li>
+            <li>Specify the ball bearing size in millimeters.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Picket Fence</h2>
+        <ul>
+            <li>Upload a .dcm or .tiff file.</li>
+            <li>Enter the desired tolerance and action level.</li>
+            <li>To analyze individual leaves, select the "Separate Leaves" option.</li>
+            <li>For combined leaf analysis, deselect the "Separate Leaves" option.</li>
+            <li>Define the nominal gap for analysis:
+                <ul>
+                    <li>Enter the expected picket gap in millimeters.</li>
+                    <li>May require adjustment due to DLG and EPID scattering.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Starshot</h2>
+        <ul>
+            <li>Upload a .dcm or .tiff file for analysis.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>CatPhantom</h2>
+        <ul>
+            <li>Upload .dcm images of CBCT/CT in a folder.</li>
+        </ul>
+    </div>
+
+</body>
+</html>

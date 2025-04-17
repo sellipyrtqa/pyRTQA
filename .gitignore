@@ -1,0 +1,34 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Executable files
+*.exe
+
+# IDE and editor config files
+.vscode/
+.idea/
+
+# macOS and Windows system files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+*.env
+
+# Logs
+*.log
+
+# Build folders and distribution files
+build/
+dist/
+*.spec
+
+# Installer/package files (like pyRTQA.pkg)
+*.pkg
+*.msi
+*.dmg
+*.zip
+*.tar.gz
