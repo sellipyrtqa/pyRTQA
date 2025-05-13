@@ -86,6 +86,8 @@ class pyRTQAApp:
                                   command=lambda: self.select_qa_type('StarShot', 'event'))
         analysis_menu.add_command(label='CatPhantom',
                                   command=lambda: self.select_qa_type('CatPhantom', 'event'))
+        analysis_menu.add_command(label='Leeds TOR',
+                                  command=lambda: self.select_qa_type('LeedsTOR', 'event'))
 
         # File menu
         file_menu = tk.Menu(toolbar, tearoff=0)
@@ -114,20 +116,25 @@ class pyRTQAApp:
         self.department_entry = tk.Entry(parent, width=70, highlightcolor="blue", highlightthickness=1)
         self.department_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
+        self.linac_ID_label = tk.Label(parent, text='Machine ID/Name:', bg='#f0f0f0', anchor=tk.W)
+        self.linac_ID_label.grid(row=3, column=0, pady=5, sticky='w')
+        self.linac_ID_entry = tk.Entry(parent, width=70, highlightcolor="blue", highlightthickness=1)
+        self.linac_ID_entry.grid(row=3, column=1, pady=5, sticky='ew')
+
         self.measured_by_label = tk.Label(parent, text='Measured by:', bg='#f0f0f0', anchor=tk.W)
-        self.measured_by_label.grid(row=3, column=0, pady=5, sticky='w')
+        self.measured_by_label.grid(row=4, column=0, pady=5, sticky='w')
         self.measured_by_entry = tk.Entry(parent, width=70, highlightcolor="blue", highlightthickness=1)
-        self.measured_by_entry.grid(row=3, column=1, pady=5, sticky='ew')
+        self.measured_by_entry.grid(row=4, column=1, pady=5, sticky='ew')
 
         # ComboBox for QA Type Selection
         self.qa_type_label = tk.Label(parent, text='QA Type:', bg='#f0f0f0', anchor=tk.W)
-        self.qa_type_label.grid(row=4, column=0, pady=5, sticky='w')
+        self.qa_type_label.grid(row=5, column=0, pady=5, sticky='w')
         self.qa_type_var = tk.StringVar()
         self.qa_type_combobox = ttk.Combobox(parent, textvariable=self.qa_type_var,
                                              values=["FFF Field Analysis-AERB", "Field Analysis", "WinstonLutz QA",
-                                                     "PicketFence", "StarShot", "CatPhantom"],
+                                                     "PicketFence", "StarShot", "CatPhantom", "LeedsTOR"],
                                              state="readonly")
-        self.qa_type_combobox.grid(row=4, column=1, pady=5, sticky='ew')
+        self.qa_type_combobox.grid(row=5, column=1, pady=5, sticky='ew')
         self.qa_type_combobox.bind('<<ComboboxSelected>>', self.update_ui_for_qa_type)
 
 
@@ -194,32 +201,43 @@ class pyRTQAApp:
             self.phantom_type_combobox.grid(row=0, column=1, pady=5, sticky='ew')
 
         elif qa_type == 'PicketFence':
+            self.pf_type_var = tk.StringVar(value='Single')
+            self.single_radiobutton = tk.Radiobutton(self.dynamic_fields_frame, text='Single Image',
+                                                  variable=self.pf_type_var, value='Single', bg='#f0f0f0')
+            self.single_radiobutton.grid(row=0, column=0, pady=5, sticky='w')
+
+            self.multiple_radiobutton = tk.Radiobutton(self.dynamic_fields_frame, text='Multiple Images',
+                                                    variable=self.pf_type_var, value='Multiple', bg='#f0f0f0')
+            self.multiple_radiobutton.grid(row=0, column=1, pady=5, sticky='w')
+
             self.mlc_type_label = tk.Label(self.dynamic_fields_frame, text='MLC Type:', bg='#f0f0f0', anchor=tk.W)
-            self.mlc_type_label.grid(row=0, column=0, pady=5, sticky='w')
-            self.mlc_type_combobox = ttk.Combobox(self.dynamic_fields_frame, values=['Millennium','HD_MILLENNIUM', 'AGILITY', 'BMOD','MLCI', 'HALCYON_DISTAL', 'HALCYON_PROXIMAL'])
-            self.mlc_type_combobox.grid(row=0, column=1, pady=5, sticky='ew')
+            self.mlc_type_label.grid(row=1, column=0, pady=5, sticky='w')
+            self.mlc_type_combobox = ttk.Combobox(self.dynamic_fields_frame,
+                                                  values=['MILLENNIUM', 'HD_MILLENNIUM', 'AGILITY',
+                                                          'BMOD', 'MLCI', 'HALCYON_DISTAL', 'HALCYON_PROXIMAL'])
+            self.mlc_type_combobox.grid(row=1, column=1, pady=5, sticky='ew')
 
             self.separate_leaves_var = tk.BooleanVar()
             self.separate_leaves_checkbutton = tk.Checkbutton(self.dynamic_fields_frame, text='Separate Leaves',
                                                               bg='#f0f0f0', variable=self.separate_leaves_var,
                                                               command=self.toggle_nominal_gap)
-            self.separate_leaves_checkbutton.grid(row=0, column=2, pady=5, sticky='w')
+            self.separate_leaves_checkbutton.grid(row=1, column=2, pady=5, sticky='w')
 
             self.nominal_gap_label = tk.Label(self.dynamic_fields_frame, text='Nominal Gap (mm):', bg='#f0f0f0',
                                               anchor=tk.W)
-            self.nominal_gap_label.grid(row=0, column=3, pady=5, sticky='w')
+            self.nominal_gap_label.grid(row=1, column=3, pady=5, sticky='w')
             self.nominal_gap_entry = tk.Entry(self.dynamic_fields_frame, state='disabled')
-            self.nominal_gap_entry.grid(row=0, column=4, pady=5, sticky='ew')
+            self.nominal_gap_entry.grid(row=1, column=4, pady=5, sticky='ew')
 
             self.tolerance_label = tk.Label(self.dynamic_fields_frame, text='Tolerance:', bg='#f0f0f0', anchor=tk.W)
-            self.tolerance_label.grid(row=1, column=0, pady=5, sticky='w')
+            self.tolerance_label.grid(row=2, column=0, pady=5, sticky='w')
             self.tolerance_entry = tk.Entry(self.dynamic_fields_frame)
-            self.tolerance_entry.grid(row=1, column=1, pady=5, sticky='ew')
+            self.tolerance_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
             self.action_level_label = tk.Label(self.dynamic_fields_frame, text='Action Level:', bg='#f0f0f0', anchor=tk.W)
-            self.action_level_label.grid(row=1, column=2, pady=5, sticky='w')
+            self.action_level_label.grid(row=2, column=2, pady=5, sticky='w')
             self.action_level_entry = tk.Entry(self.dynamic_fields_frame)
-            self.action_level_entry.grid(row=1, column=3, pady=5, sticky='ew')
+            self.action_level_entry.grid(row=2, column=3, pady=5, sticky='ew')
 
     def toggle_nominal_gap(self):
         if self.separate_leaves_var.get():
@@ -235,6 +253,14 @@ class pyRTQAApp:
             file_path = filedialog.askdirectory()
         elif qa_type == 'CatPhantom':
             file_path = filedialog.askdirectory()
+        elif qa_type == 'PicketFence':
+            # Check if single or multi mode is selected
+            pf_mode = self.pf_type_var.get()  # should be "single" or "multiple"
+            if pf_mode == "Multiple":
+                file_path = filedialog.askdirectory()
+            else:
+                file_path = filedialog.askopenfilename(filetypes=[("DICOM files", "*.dcm"), ("All files", "*.*")])
+
         else:
             file_path = filedialog.askopenfilename()
 
@@ -286,11 +312,13 @@ class pyRTQAApp:
                 elements = process_catphantom(file_path, phantom_type)
             elif qa_type == 'PicketFence':
                 from Analysis.picketfenceqa import process_picketfence
+                from Analysis.Picketfence_batch import analyze_picketfence_multiple
                 try:
                     tolerance = float(self.tolerance_entry.get()) if self.tolerance_entry else 0.2
                     action_level = float(self.action_level_entry.get()) if self.action_level_entry else 0.1
                     mlc_type = self.mlc_type_combobox.get()
                     separate_leaves = self.separate_leaves_var.get()
+                    selected_path = self.file_path_label['text']
 
                     # Convert nominal_gap to float if separate_leaves is true
                     nominal_gap = float(
@@ -300,14 +328,21 @@ class pyRTQAApp:
                     messagebox.showerror("Error",
                                          "Please enter valid numeric values for tolerance, action level, and nominal gap.")
                     return
-
+                if self.pf_type_var.get() == 'Multiple':
+                    elements = analyze_picketfence_multiple(selected_path, tolerance, action_level, mlc_type,
+                                                            separate_leaves=separate_leaves, nominal_gap=nominal_gap)
+                else:
                     # Call the function with nominal_gap if separate_leaves is true, otherwise pass None
-                elements = process_picketfence(file_path, tolerance, action_level, mlc_type,
+                    elements = process_picketfence(selected_path, tolerance, action_level, mlc_type,
                                                separate_leaves=separate_leaves, nominal_gap=nominal_gap)
             elif qa_type == 'StarShot':
                 from Analysis.StarShot import process_starshot
-
                 elements = process_starshot(file_path)
+
+            elif qa_type == 'LeedsTOR':
+
+                from Analysis.Leeds_TOR import process_leedsTOR
+                elements = process_leedsTOR(file_path)
 
             # Display results
             self.results_text.insert(tk.END,
@@ -324,6 +359,7 @@ class pyRTQAApp:
             from Analysis.generatepdf import generate_pdf
             institution = self.institution_entry.get()
             department = self.department_entry.get()
+            linac_ID = self.linac_ID_entry.get()
             measured_by = self.measured_by_entry.get()
             if not institution or not department or not measured_by:
                 messagebox.showwarning("Input Error", "Please fill in all the required fields.")
@@ -331,7 +367,7 @@ class pyRTQAApp:
 
             pdf_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF Files", "*.pdf")])
             if pdf_path:
-                generate_pdf(self.generated_elements, institution, department, measured_by, pdf_path)
+                generate_pdf(self.generated_elements, institution, department, linac_ID, measured_by, pdf_path)
                 messagebox.showinfo("Success", "PDF report generated successfully!")
             log.info("PDF generation completed")
         except Exception as e:

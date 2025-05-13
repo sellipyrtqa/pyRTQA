@@ -12,7 +12,7 @@ from logs.logger import setup_logger
 log = setup_logger("generatepdf.py")
 
 
-def generate_pdf(elements, institution, department, measured_by, pdf_path):
+def generate_pdf(elements, institution, department, linac_ID, measured_by, pdf_path):
     log.info(f"PDF generation started..")
     try:
         styles = getSampleStyleSheet()
@@ -59,9 +59,12 @@ def generate_pdf(elements, institution, department, measured_by, pdf_path):
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
+        header = Paragraph(f"Machine ID: {linac_ID}", header_style)
         footer = Paragraph(f"Measured by: {measured_by}<br/> Printed on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style)
 
         content.append(header_table)
+        content.append(Spacer(1, 12))
+        content.append(header)
         content.append(Spacer(1, 12))
         content.extend(elements)
         content.append(Spacer(1, 5))
