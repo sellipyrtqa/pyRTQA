@@ -26,42 +26,47 @@ footer_style = ParagraphStyle('FooterStyle',
     textColor=colors.black
  )
 def analyze_picketfence_multiple(image_folder, tolerance, action_level, mlc_type, separate_leaves=False, nominal_gap=None):
+    log.info(f"Picket Fence multiple images analysis started")
     image_results = []
     elements = []
-    # Convert nominal_gap to float if separate_leaves is True
-    if separate_leaves:
-        try:
-            nominal_gap = float(nominal_gap)
-        except ValueError:
-            print("Error: Nominal gap must be a valid number.")
-            return []
+    try:
+        # Convert nominal_gap to float if separate_leaves is True
+        if separate_leaves:
+            try:
+                nominal_gap = float(nominal_gap)
+            except ValueError:
+                print("Error: Nominal gap must be a valid number.")
+                return []
 
-    for file in sorted(os.listdir(image_folder)):
-        if file.lower().endswith(".dcm"):
-            filepath = os.path.join(image_folder, file)
-            pf = PicketFence(filepath, mlc=MLC[mlc_type])
-            pf.analyze(
-                tolerance=tolerance,
-                action_tolerance=action_level,
-                separate_leaves=separate_leaves,
-                nominal_gap_mm=nominal_gap if separate_leaves else None
-            )
+        for file in sorted(os.listdir(image_folder)):
+            if file.lower().endswith(".dcm"):
+                filepath = os.path.join(image_folder, file)
+                pf = PicketFence(filepath, mlc=MLC[mlc_type])
+                pf.analyze(
+                    tolerance=tolerance,
+                    action_tolerance=action_level,
+                    separate_leaves=separate_leaves,
+                    nominal_gap_mm=nominal_gap if separate_leaves else None
+                )
 
-            # Extract DICOM metadata
-            ds = dcmread(filepath)
-            gantry = getattr(ds, "GantryAngle", "N/A")
-            gantry_str = str(int(round(gantry))) if isinstance(gantry, (int, float)) else str(gantry)
+                # Extract DICOM metadata
+                ds = dcmread(filepath)
+                gantry = getattr(ds, "GantryAngle", "N/A")
+                gantry_str = str(int(round(gantry))) if isinstance(gantry, (int, float)) else str(gantry)
 
-            # Save for summary
-            image_results.append({
-                "filename": file,
-                "gantry": gantry,
-                "gantry_str": gantry_str,
-                "max_error": pf.max_error,
-                "max_leaf": pf.max_error_leaf,
-                "max_picket": pf.max_error_picket,
-                "pf": pf  # Save reference for plotting later
-            })
+                # Save for summary
+                image_results.append({
+                    "filename": file,
+                    "gantry": gantry,
+                    "gantry_str": gantry_str,
+                    "max_error": pf.max_error,
+                    "max_leaf": pf.max_error_leaf,
+                    "max_picket": pf.max_error_picket,
+                    "pf": pf  # Save reference for plotting later
+                })
+    except Exception as e:
+        log.error(f"Error found {e}")
+        raise
 
     # Summary table
     data = [["Gantry", "Max Error (mm)", "Max Error Leaf", "Max Error Picket No", "Filename"]]
@@ -104,5 +109,5 @@ def analyze_picketfence_multiple(image_folder, tolerance, action_level, mlc_type
         plt.close()
 
         elements.append(Spacer(1, 12))
-
+    log.info("Picket Fence multiple images Analysis Completed")
     return elements
