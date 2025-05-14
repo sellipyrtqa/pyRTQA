@@ -1,5 +1,4 @@
 from io import BytesIO
-
 import matplotlib.pyplot as plt
 from pylinac import PicketFence
 from pylinac.picketfence import MLC
@@ -24,7 +23,9 @@ footer_style = ParagraphStyle('FooterStyle',
  )
 
 def process_picketfence(file_path, tolerance, action_level, mlc_type, separate_leaves=False, nominal_gap=None):
-    log.info("Picket Fence analysis started")
+
+    log.info(f"Picket Fence analysis started")
+
     # Convert nominal_gap to float if separate_leaves is True
     if separate_leaves:
         try:
