@@ -6,7 +6,7 @@ It's built using Python and Tkinter, and integrates with [pylinac](https://githu
 ## 🎯 Features
 
 - Analyze CatPhan images (503, 504, 600, 604 supported)
-- Picket Fence, Starshot, Winston-Lutz QA, Field analysis support
+- Picket Fence - Single and Multiple image analysis, Starshot, Winston-Lutz QA, Field analysis, Leeds Phantom support
 - FFF Profile Analysis for AERB compliance
 - User-friendly GUI built with Tkinter
 - EXE version available for non-Python users
@@ -78,6 +78,13 @@ Contributions are always welcome! If you find a bug, have a feature request, or 
 5. Input the expected picket gap (in mm)
    - Only needed for separate leaf mode
    - You may need to adjust for DLG & EPID effects
+---
+
+### **Picket Fence - Batch Analysis**
+1. Place multiple Picket Fence .dcm images in a folder.
+2. Each image is analyzed individually.
+3. Summary table and individual results (image, histogram) are included in the report.
+4. .dcm format is recommended for best analysis.
 
 ---
 
@@ -90,6 +97,12 @@ Contributions are always welcome! If you find a bug, have a feature request, or 
 ### **CatPhantom:**
 
 1. Upload a folder of CBCT/CT `.dcm` images
+
+---
+
+### *Leeds TOR*
+1. Upload a high-quality image of the Leeds TOR phantom (.dcm preferred).
+2. Analysis includes low and high contrast resolution tests.
 
 ---
 
