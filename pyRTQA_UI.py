@@ -64,7 +64,7 @@ class pyRTQAApp:
         self.download_button.pack(side=tk.LEFT, padx=20, pady=5)
 
         # Footer label
-        self.developed_by_label = tk.Label(main_frame, text='Developed by Selli_MedPhy', font=('Arial', 8), bg='#f0f0f0')
+        self.developed_by_label = tk.Label(main_frame, text='Developed by Sambasivaselli_R@pyRTQA', font=('Arial', 8), bg='#f0f0f0')
         self.developed_by_label.pack(side=tk.RIGHT, anchor=tk.SE, padx=10, pady=10)
 
     def create_toolbar(self, parent):
