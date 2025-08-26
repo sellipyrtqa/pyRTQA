@@ -26,13 +26,14 @@ def process_winstonlutz(folder_path, bb_size):
     log.info(f"Winston Lutz Analysis started..")
     try:
         wl = WinstonLutz(folder_path)
-        wl.analyze(bb_size_mm=bb_size)
+        wl.analyze(bb_size_mm=bb_size, low_density_bb=True)
 
         wl_results = wl.results()
         print(wl_results)
         elements = []
         add_wl_results_to_pdf(elements, wl, wl_results)
     except Exception as e:
+        print(f"Error Found: {e}")
         log.error(f"Error Found :{e}")
         raise
     log.info("Winston Lutz Analysis Completed and report generated")
