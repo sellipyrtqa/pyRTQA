@@ -11,6 +11,8 @@ class pyRTQAApp:
         self.root.geometry('700x670')
         self.root.configure(bg='#f0f0f0')
 
+
+
         # Initialize results storage
         # self.results = None
         self.generated_elements = []
@@ -157,6 +159,8 @@ class pyRTQAApp:
         if qa_type == 'FFF Field Analysis-AERB':
             # Add Radio buttons for RFA or 2D Image Data
             self.data_type_var = tk.StringVar(value='RFA')
+            # vendor selection for EPID polarity handling (Elekta default)
+            self.vendor_var = tk.StringVar(value='Elekta')
             self.rfa_radiobutton = tk.Radiobutton(self.dynamic_fields_frame, text='Use RFA data',
                                                   variable=self.data_type_var, value='RFA', bg='#f0f0f0')
             self.rfa_radiobutton.grid(row=0, column=0, pady=5, sticky='w')
@@ -175,6 +179,15 @@ class pyRTQAApp:
             self.depth_label.grid(row=1, column=2, pady=5, sticky='w')
             self.depth_entry = tk.Entry(self.dynamic_fields_frame)
             self.depth_entry.grid(row=1, column=3, pady=5, sticky='ew')
+
+            # Vendor selection (Elekta / Varian)
+            self.vendor_label = tk.Label(self.dynamic_fields_frame, text='Vendor:', bg='#f0f0f0', anchor=tk.W)
+            self.vendor_label.grid(row=1, column=4, pady=5, sticky='w')
+            self.vendor_combobox = ttk.Combobox(self.dynamic_fields_frame, textvariable=self.vendor_var,
+                                                values=['Elekta', 'Varian'], state='readonly', width=10)
+            self.vendor_combobox.grid(row=1, column=5, pady=5, sticky='w')
+            self.vendor_combobox.set('Elekta')
+
 
         elif qa_type == 'Field Analysis':
 
@@ -262,9 +275,12 @@ class pyRTQAApp:
                 file_path = filedialog.askopenfilename(filetypes=[("DICOM files", "*.dcm"), ("All files", "*.*")])
 
         else:
-            file_path = filedialog.askopenfilename()
-
-        self.file_path_label.config(text=file_path)
+            file_path = filedialog.askopenfilename(filetypes=[("DICOM files", "*.dcm"), ("All files", "*.*")])
+        if not file_path:
+            # user cancelled; set label to empty string (avoid old path lingering)
+            self.file_path_label.config(text="")
+        else:
+            self.file_path_label.config(text=file_path)
 
 
     def process_qa(self):
@@ -273,6 +289,10 @@ class pyRTQAApp:
             qa_type = self.qa_type_var.get()
             # qa_type = self.qa_type_combobox.get()
             file_path = self.file_path_label.cget("text").replace("File Path: ", "")
+            # Validate file path presence
+            if not file_path:
+                messagebox.showwarning("Input Error", "No input file/folder selected. Use Upload File/Folder first.")
+                return
 
             self.results_text.delete(1.0, tk.END)
 
@@ -289,14 +309,20 @@ class pyRTQAApp:
                 if self.data_type_var.get() == 'RFA':
                     elements = process_fff_analysis(file_path, self.energy, self.depth)
                 else:  # For '2D Image Data'
-                    elements = process_fffFA_analysis(file_path, file_type, self.energy, self.depth)
+                    vendor = self.vendor_var.get() if hasattr(self, 'vendor_var') else 'Elekta'
+                    invert_profile = (str(vendor).strip().lower() == 'elekta')
+
+                    elements = process_fffFA_analysis(file_path, file_type, self.energy, self.depth,
+                                                      vendor=vendor, invert_profile=invert_profile)
+
             elif qa_type == 'Field Analysis':
-                from Analysis.FieldAnalysis import process_FA
+
                 self.energy = self.energy_entry.get()
                 self.depth = self.depth_entry.get()
                 if not self.energy or not self.depth:
                     messagebox.showwarning("Warning", "Please enter energy and depth for FFF Analysis.")
                     return
+                from Analysis.FieldAnalysis import process_FA
                 elements = process_FA(file_path, self.energy, self.depth)
             elif qa_type == 'WinstonLutz QA':
                 from Analysis.winstonlutz import process_winstonlutz
@@ -350,12 +376,18 @@ class pyRTQAApp:
             self.generated_elements = elements
             log.info("QA Process completed.")
         except Exception as e:
-            log.error(f"Error in QA Processing: {e}")
+            # log with exception information for easier debugging
+            log.error(f"Error in QA Processing: {e}", exc_info=True)
+            # give the user a friendly message too
+            messagebox.showerror("Processing Error", f"An error occurred during QA processing:\n{str(e)}")
 
 
     def download_pdf(self):
         log.info("PDF generation started")
         try:
+            if not getattr(self, 'generated_elements', None):
+                messagebox.showwarning("No Results", "No generated report elements to save. Run Process first.")
+                return
             from Analysis.generatepdf import generate_pdf
             institution = self.institution_entry.get()
             department = self.department_entry.get()
@@ -371,7 +403,8 @@ class pyRTQAApp:
                 messagebox.showinfo("Success", "PDF report generated successfully!")
             log.info("PDF generation completed")
         except Exception as e:
-            log.error(f"Error in report generation: {e}")
+            log.error(f"Error in report generation: {e}", exc_info=True)
+            messagebox.showerror("PDF Error", f"Failed to generate PDF:\n{str(e)}")
 
     def show_about(self):
         messagebox.showinfo("About pyRTQA", "pyRTQA v3.2.0\n"
