@@ -132,65 +132,80 @@ class Process:
         return predictedX
 
 def invert_image(pixel_array):
-    """Inverts the pixel values of an image."""
-    max_value = np.max(pixel_array)
-    inverted_pixel_array = max_value - pixel_array  # Invert the pixel values
-    return inverted_pixel_array
+    """Invert pixel values (utility kept but not applied to the whole image by default)."""
+    max_value = np.max(pixel_array) if np.max(pixel_array) != 0 else 1.0
+    return max_value - pixel_array
 
 def read_dicom(file_path):
-    """Reads a DICOM file, inverts its pixel values, and returns both the original and inverted arrays."""
+    """
+    Read DICOM and return raw pixel array (do NOT invert image here).
+    Return (original_pixel_array) to allow preview using original data.
+    """
     dataset = pydicom.dcmread(file_path)
-    pixel_array = dataset.pixel_array
-    inverted_pixel_array = invert_image(pixel_array)  # Invert the pixel array
-    return pixel_array, inverted_pixel_array
+    pixel_array = dataset.pixel_array.astype(np.float32)
+    return pixel_array
+
 
 def read_tiff(file_path):
-    """Reads a TIFF file, inverts its pixel values, and returns the inverted array."""
-    img = PILImage.open(file_path)  # Use PILImage to open TIFF
-    pixel_array = np.array(img)  # Convert to NumPy array
-    inverted_pixel_array = invert_image(pixel_array)  # Invert the pixel array
-    return inverted_pixel_array  # Return only the inverted array
+    """Read TIFF and return raw pixel array (do NOT invert image here)."""
+    img = PILImage.open(file_path)
+    pixel_array = np.array(img).astype(np.float32)
+    return pixel_array
 
 
-def extract_profile_points(pixel_array, axis=0):
-    """Extracts profile points from an inverted DICOM or TIFF image along a specified axis,
-    with the center of the image as 0 on the x-axis."""
+def extract_profile_points(pixel_array, axis=0, invert_profile=False):
+    """
+    Extract profile points from pixel_array along axis.
+    axis==0 -> inline (middle row), axis==1 -> crossline (middle column).
+    invert_profile: if True, invert profile intensity values (max - value) before normalization.
+    Returns list of PointXY objects (same shape as original pipeline expects).
+    """
+    h, w = pixel_array.shape[:2]
 
-    if axis == 1:  # Swapped: Inline (vertical) profile
-        profile = pixel_array[:, pixel_array.shape[1] // 2]  # Middle column (vertical)
-        image_height = profile.shape[0]
-        half_height = image_height // 2
-        x_values = np.linspace(-half_height, half_height, image_height)
+    if axis == 1:
+        # crossline (middle column -> vertical profile)
+        profile = pixel_array[:, w // 2].astype(np.float32)
+        length = profile.shape[0]
+        half = length // 2
+        x_values = np.linspace(-half, half, length)
+    else:
+        # inline (middle row -> horizontal profile)
+        profile = pixel_array[h // 2, :].astype(np.float32)
+        length = profile.shape[0]
+        half = length // 2
+        x_values = np.linspace(-half, half, length)
 
-    else:  # Swapped: Crossline (horizontal) profile
-        profile = pixel_array[pixel_array.shape[0] // 2, :]  # Middle row (horizontal)
-        image_width = profile.shape[0]
-        half_width = image_width // 2
-        x_values = np.linspace(-half_width, half_width, image_width)
+    # If vendor/flag indicates inverted greyscale (Elekta), invert the 1D profile here
+    if invert_profile:
+        profile = np.max(profile) - profile
 
-    max_val = np.max(profile)
-    norm_profile = (profile / max_val) * 100  # Normalize to percentage
+    max_val = np.max(profile) if np.max(profile) != 0 else 1.0
+    norm_profile = (profile / max_val) * 100.0
 
-    # Create PointXY objects with x-values centered around 0
-    points = [PointXY(i, x_values[i] / 40, norm_profile[i]) for i in range(len(norm_profile))]
+    # Build PointXY objects centered on x (convert units to cm later if required by Process)
+    points = [PointXY(i, x_values[i] / 40.0, float(norm_profile[i])) for i in range(len(norm_profile))]
 
     return points
 
 def process_dicom_or_tiff(file_path, file_type):
-    """Main function to process the DICOM or TIFF file and return points and the original image."""
-    if file_type == 'DICOM':
-        original_pixel_array, pixel_array = read_dicom(file_path)  # DICOM returns both original and inverted
-    elif file_type == 'TIFF':
-        original_pixel_array = None  # No original for TIFF
-        pixel_array = read_tiff(file_path)  # TIFF returns the inverted pixel array only
+    """
+    Read file and return (points_inline, points_crossline, original_pixel_array, pixel_array)
+    Note: pixel_array is the raw pixel array (no full-image inversion).
+    """
+    if file_type.upper() == 'DICOM':
+        pixel_array = read_dicom(file_path)
+        original_pixel_array = pixel_array.copy()
+    elif file_type.upper() == 'TIFF':
+        pixel_array = read_tiff(file_path)
+        original_pixel_array = None
     else:
         raise ValueError("Unsupported file type")
 
-    # Extract points for inline and crossline profiles
-    points_inline = extract_profile_points(pixel_array, axis=0)
-    points_crossline = extract_profile_points(pixel_array, axis=1)
+    # Return raw pixel array; inversion of profile handled later in process_fffFA_analysis
+    points_inline = None
+    points_crossline = None
 
-    return points_inline, points_crossline, original_pixel_array, pixel_array  # Return pixel_array for TIFF
+    return points_inline, points_crossline, original_pixel_array, pixel_array
 
 
 def plot_image_with_inline_crossline(pixel_array, image_type):
@@ -349,44 +364,60 @@ def add_FAresults_to_pdf(elements, results, profile_type, img_data, energy, dept
     image.drawWidth = 7 * inch
     elements.append(image)
     elements.append(Spacer(1, 12))
-def process_fffFA_analysis(file_path, file_type, energy, depth):
+def process_fffFA_analysis(file_path, file_type, energy, depth, vendor='Elekta', invert_profile=False):
+    """
+    Main entry for FFF 2D analysis.
+    vendor: 'Elekta' or 'Varian' (string). Varian implies profile inversion by default.
+    invert_profile: explicit override (True forces inversion).
+    Returns: elements (list) - same structure as original function (PDF elements).
+    """
     log.info(f"Processing FFF FA Analysis for {file_type} file: {file_path}")
     try:
-        # Now capture both the original and the processed pixel arrays
+        # read raw pixels (no image inversion)
         points_inline, points_crossline, original_pixel_array, pixel_array = process_dicom_or_tiff(file_path, file_type)
     except Exception as e:
         log.error(f"Error processing image: {e}")
         messagebox.showerror("Error", str(e))
         return []
 
+    vendor_name = str(vendor).strip().lower()
+
+    if vendor_name == 'elekta':
+        effective_invert = True  # Elekta images require profile inversion
+    elif vendor_name == 'varian':
+        effective_invert = False  # Varian images used as-is
+    else:
+        # fallback: do NOT invert unless explicitly forced
+        effective_invert = bool(invert_profile)
+
     elements = []
     log.info("Generating analysis report")
 
-    # Add the DICOM or TIFF image with Inline and Crossline axes to the PDF
+    # Prepare image preview: use original if available (no changes to image)
     if original_pixel_array is not None:
-        # Use original DICOM array if available
         img_data_with_axes = plot_image_with_inline_crossline(original_pixel_array, file_type)
     else:
-        # Use processed inverted pixel array for TIFF
         img_data_with_axes = plot_image_with_inline_crossline(pixel_array, file_type)
 
-    # Embed the image into the PDF
-    pdf_image = Image(img_data_with_axes, 4 * inch, 4 * inch)  # Directly use BytesIO object
-
-    elements.append(Paragraph(f'PROFILE ANALYSIS - AERB METHOD', styles['Title']))
+    pdf_image = Image(img_data_with_axes, 4 * inch, 4 * inch)
+    elements.append(Paragraph(f'PROFILE ANALYSIS - AERB METHOD (Vendor: {vendor}, inverted={effective_invert})', styles['Title']))
     elements.append(pdf_image)
     elements.append(Spacer(1, 12))
 
-    # Process inline and crossline points
-    if points_inline:
-        results_inline = Process.calculate(points_inline)
-        img_data_inline = plot_to_image(points_inline, results_inline, 'Inline')
+    # Now extract profiles with the effective inversion flag
+    inline_points = extract_profile_points(pixel_array, axis=0, invert_profile=effective_invert)
+    crossline_points = extract_profile_points(pixel_array, axis=1, invert_profile=effective_invert)
+
+    if inline_points:
+        results_inline = Process.calculate(inline_points)
+        img_data_inline = plot_to_image(inline_points, results_inline, 'Inline')
         add_FAresults_to_pdf(elements, results_inline, 'Inline', img_data_inline, energy, depth)
 
-    if points_crossline:
-        results_crossline = Process.calculate(points_crossline)
-        img_data_crossline = plot_to_image(points_crossline, results_crossline, 'Crossline')
+    if crossline_points:
+        results_crossline = Process.calculate(crossline_points)
+        img_data_crossline = plot_to_image(crossline_points, results_crossline, 'Crossline')
         add_FAresults_to_pdf(elements, results_crossline, 'Crossline', img_data_crossline, energy, depth)
+
     log.info("Analysis report generation completed successfully")
     return elements
 
