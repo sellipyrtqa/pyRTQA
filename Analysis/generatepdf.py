@@ -71,6 +71,13 @@ def generate_pdf(elements, institution, department, linac_ID, measured_by, pdf_p
         content.append(footer)
 
         doc.build(content)
+        # After doc.build(content)
+        for b in getattr(content, "_buffers", []):
+            try:
+                b.close()
+            except:
+                pass
+
     except Exception as e:
         log.error(f"Error found in pdf generation : {e}")
         raise
