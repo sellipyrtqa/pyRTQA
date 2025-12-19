@@ -26,7 +26,7 @@ def process_winstonlutz(folder_path, bb_size):
     log.info(f"Winston Lutz Analysis started..")
     try:
         wl = WinstonLutz(folder_path)
-        wl.analyze(bb_size_mm=bb_size, low_density_bb=True)
+        wl.analyze(bb_size_mm=bb_size)
 
         wl_results = wl.results()
         print(wl_results)
